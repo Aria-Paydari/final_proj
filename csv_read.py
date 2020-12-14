@@ -1,6 +1,8 @@
 import csv
 from dataclasses import dataclass
 from typing import List, Tuple
+import plotly.express as px
+
 
 def read_csv_file(filename: str) -> Tuple[List[str], List[List[str]]]:
     with open(filename) as file:
@@ -47,23 +49,46 @@ class Country:
 
 
 
-    def whole_regression(self, economic_growth: List[float], y: List[float], year2: int) -> float:
+    def whole_regression(self, y: List[float], year2: int) -> float:
         """
         returns predicted value of climate impact with a given year
         Preconditions:
             - len(year1) == len(economic_growth) == len(y)
             - 2050 >= year2 >= 2020
         """
-        economic_growth_in_year2 = linear_regression_for_one(self.year, economic_growth, year2)
-        predicted_value = linear_regression_for_two(self.year, economic_growth, y, year2, economic_growth_in_year2)
+        economic_growth_in_year2 = linear_regression_for_one(self.year, self.gdpp, year2)
+        predicted_value = linear_regression_for_two(self.year, self.gdpp, y, year2, economic_growth_in_year2)
         return predicted_value
 
+    def bar_plot_co2(self, country_name: str) -> None:
+        """
+        creates a bar plot that maps the given years to its CO2 emissions
+        """
+        fig = px.bar(x=self.year, y=self.co2_emission, title='CO2 Emission for ' + country_name,
+                     labels=dict(x="year", y="CO2 emission (Mg)"))
+        fig.show()
 
-def create_all_countries(database: List[List[str]]) -> None:
+    def bar_plot_tree_loss(self, country_name: str) -> None:
+        fig = px.bar(x=self.year, y=self.tree_cover_loss, title='Tree Loss Rate for ' + country_name,
+                     labels=dict(x="year", y="tree lost rate (ha)"))
+        fig.show()
+
+    def bar_plot_biomass(self, country_name: str) -> None:
+        fig = px.bar(x=self.year, y=self.biomass_loss, title='Biomass Loss Rate for ' + country_name,
+                     labels=dict(x="year", y="biomass loss (Mg)"))
+        fig.add_trace(x=self.year, y=self.biomass_loss)
+        fig.show()
+
+def create_country(database: List[List[str]]) -> List[tuple]:
+    country_list = []
     for country in database:
-        Country(country[0],country[1], get_year_list(database), get_GDPP_list(database, country[0]),get_GDP_list(
-            database, country[0]), get_tree_list(database, country[0]),
-                                             get_co2_list(database, country[0]), get_biomass_list(database, country[0]))
+        if country[0] not in str(country_list):
+            country_list.append((country[0],Country(country[0],country[1],get_year_list(database),
+                                    get_GDPP_list(database,country[0]),get_GDP_list(database,country[0]),
+                                    get_tree_list(database,country[0]), get_co2_list(database,
+                                    country[0]), get_biomass_list(database,country[0]))))
+
+    return country_list
 
 def get_year_list(database: List[List[str]]) -> List[int]:
     year_list = []
